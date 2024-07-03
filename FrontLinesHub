@@ -1,0 +1,206 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Frontlines Hub",
+    LoadingTitle = "Loading Frontlines Scripts",
+    LoadingSubtitle = "by vhc_",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "Big Hub"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvitelink",
+        RememberJoins = true
+    },
+    KeySystem = true,
+    KeySettings = {
+        Title = "Frontlines Hub",
+        Subtitle = "Key System",
+        Note = "made by vhc_",
+        FileName = "Key",
+        SaveKey = true,
+        GrabKeyFromSite = true,
+        Key = {"https://pastebin.com/raw/AQVugr2X"}
+    }
+})
+
+local MainTab = Window:CreateTab("Home", nil)
+local MainSection = MainTab:CreateSection("Main")
+
+Rayfield:Notify({
+    Title = "System Notification",
+    Content = "The Script has been loaded Successfully!",
+    Duration = 6.5,
+    Image = 4483362458,
+    Actions = {
+        Ignore = {
+            Name = "Okay!",
+            Callback = function()
+                print("The user tapped Okay!")
+            end
+        }
+    }
+})
+
+local function loadESP()
+    local esp = loadstring(game:HttpGet("https://raw.githubusercontent.com/andrewc0de/Roblox/main/Dependencies/ESP.lua"))()
+    esp:Toggle(true)
+    esp.Boxes = true
+    esp.Names = true
+    esp.Tracers = true
+    esp.Players = true
+
+    esp:AddObjectListener(workspace, {
+        Name = "soldier_model",
+        Type = "Model",
+        Color = Color3.new(1.000000, 0.000000, 0.000000),
+        PrimaryPart = function(obj)
+            local root
+            repeat
+                root = obj:FindFirstChild("HumanoidRootPart")
+                task.wait()
+            until root
+            return root
+        end,
+        Validator = function(obj)
+            task.wait(1)
+            if obj:FindFirstChild("friendly_marker") then
+                return false
+            end
+            return true
+        end,
+        CustomName = "?",
+        IsEnabled = "enemy"
+    })
+
+    esp.enemy = true
+
+    Rayfield:Notify({
+        Title = "ESP",
+        Content = "ESP has been loaded successfully!",
+        Duration = 6.5,
+        Image = 4483362458,
+        Actions = {
+            Ignore = {
+                Name = "Okay!",
+                Callback = function()
+                    print("ESP loaded")
+                end
+            }
+        }
+    })
+end
+
+local function loadSilentAim()
+    local size = Vector3.new(10, 10, 10)
+    local trans = 1
+    local notifications = false
+
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "soldier_model" and v:IsA("Model") and not v:FindFirstChild("friendly_marker") then
+            local pos = v:FindFirstChild("HumanoidRootPart").Position
+            for _, bp in pairs(workspace:GetChildren()) do
+                if bp:IsA("BasePart") then
+                    local distance = (bp.Position - pos).Magnitude
+                    if distance <= 5 then
+                        bp.Transparency = trans
+                        bp.Size = size
+                    end
+                end
+            end
+        end
+    end
+
+    local function handleDescendantAdded(descendant)
+        task.wait(1)
+        if descendant.Name == "soldier_model" and descendant:IsA("Model") and not descendant:FindFirstChild("friendly_marker") then
+            if notifications then
+                game.StarterGui:SetCore("SendNotification", {
+                    Title = "Script",
+                    Text = "[Warning] New Enemy Spawned! Applied hitboxes.",
+                    Icon = "",
+                    Duration = 3
+                })
+            end
+
+            local pos = descendant:FindFirstChild("HumanoidRootPart").Position
+            for _, bp in pairs(workspace:GetChildren()) do
+                if bp:IsA("BasePart") then
+                    local distance = (bp.Position - pos).Magnitude
+                    if distance <= 5 then
+                        bp.Transparency = trans
+                        bp.Size = size
+                    end
+                end
+            end
+        end
+    end
+
+    task.spawn(function()
+        game.Workspace.DescendantAdded:Connect(handleDescendantAdded)
+    end)
+
+    -- Function to shoot through walls
+    local function shootThroughWalls(target)
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local hrp = character.HumanoidRootPart
+            local targetPos = target.Position
+            local direction = (targetPos - hrp.Position).unit
+
+            -- Cast a ray from the player to the target
+            local ray = Ray.new(hrp.Position, direction * 1000)
+            local hit, hitPosition = workspace:FindPartOnRayWithIgnoreList(ray, {character}, false, true)
+
+            -- Check if the hit part is the target
+            if hit and hit:IsDescendantOf(target.Parent) then
+                -- Execute shooting logic here (e.g., apply damage)
+                print("Shot hit the target through the wall!")
+            end
+        end
+    end
+
+    -- Monitor and shoot at enemies through walls
+    game:GetService("RunService").RenderStepped:Connect(function()
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v.Name == "soldier_model" and v:IsA("Model") and not v:FindFirstChild("friendly_marker") then
+                local hrp = v:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    shootThroughWalls(hrp)
+                end
+            end
+        end
+    end)
+
+    Rayfield:Notify({
+        Title = "Silent Aim",
+        Content = "Silent Aim (Hitbox) has been loaded successfully!",
+        Duration = 6.5,
+        Image = 4483362458,
+        Actions = {
+            Ignore = {
+                Name = "Okay!",
+                Callback = function()
+                    print("Silent Aim loaded")
+                end
+            }
+        }
+    })
+end
+
+local EspButton = MainTab:CreateButton({
+    Name = "Esp",
+    Callback = function()
+        loadESP()
+    end
+})
+
+local SilentAimButton = MainTab:CreateButton({
+    Name = "Silent Aim",
+    Callback = function()
+        loadSilentAim()
+    end
+})
